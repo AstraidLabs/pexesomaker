@@ -500,14 +500,137 @@ input[type="color"] {
   .sheets-wrapper { gap: 0 !important; }
   .sheet-block { box-shadow: none !important; border: none !important; border-radius: 0 !important; page-break-after: always; break-after: page; }
   .sheet-block:last-child { page-break-after: avoid; break-after: avoid; }
-  .sheet-body { padding: 0 !important; }
+  .sheet-body { padding: 0 !important; width: auto !important; max-width: 100% !important; }
   .cut-grid, .cut-grid-wrap { border-color: #999 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   .cut-row { break-inside: avoid !important; page-break-inside: avoid !important; }
   .grid-cell { border-color: #999 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   .card-body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   .scissors-row, .col-scissors-cell { color: #999 !important; }
-  .cut-outer { overflow-x: visible !important; }
+  .cut-outer { overflow: visible !important; display: block !important; }
+  /* Make the "left scissors + grid" layout stable in print (avoid flex fragmentation) */
+  .scissors-margin, .cut-cols { display: inline-block !important; vertical-align: top !important; }
+  /* Remove overflow containers that can cause page splitting/clipping */
+  .grid-wrapper { overflow: visible !important; }
+  /* Stronger anti-split rules for print pagination engines */
+  .sheet-block, .sheet-body, .grid-wrapper, .cut-outer, .scissors-margin, .cut-cols,
+  .col-scissors, .cut-grid-wrap, .cut-row, .grid-cell {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
 }
+
+/* STARTUP TERMS MODAL */
+body.modal-open { overflow: hidden; }
+
+.start-overlay{
+  position: fixed; inset: 0;
+  background: rgba(28,25,23,0.70);
+  backdrop-filter: blur(4px);
+  z-index: 77777;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1.2rem;
+}
+.start-overlay.visible{ display:flex; }
+
+.start-box{
+  background: #fff;
+  border-radius: 22px;
+  width: min(560px, 100%);
+  box-shadow: 0 18px 60px rgba(0,0,0,0.35);
+  padding: 1.6rem 1.6rem 1.3rem;
+  position: relative;
+}
+.start-badge{ font-size: 2.2rem; margin-bottom: 0.35rem; }
+.start-box h2{
+  font-family: 'Baloo 2', cursive;
+  font-size: 1.35rem;
+  margin-bottom: 0.45rem;
+}
+.start-lead{
+  font-size: 0.95rem;
+  color: #444;
+  line-height: 1.55;
+  margin-bottom: 0.9rem;
+}
+.start-terms{
+  background: #F8FAFC;
+  border: 1px solid #E5E7EB;
+  border-radius: 16px;
+  padding: 0.9rem 1rem;
+  margin-bottom: 1rem;
+}
+.start-terms h3{
+  font-family: 'Baloo 2', cursive;
+  font-size: 1.05rem;
+  margin-bottom: 0.45rem;
+}
+.start-terms ul{
+  margin-left: 1.1rem;
+  color: #555;
+  line-height: 1.55;
+  font-size: 0.9rem;
+}
+.start-terms li{ margin: 0.25rem 0; }
+.start-terms .muted{ color:#6b7280; font-size:0.85rem; margin-top:0.55rem; }
+
+.start-check{
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  font-size: 0.92rem;
+  color: #333;
+}
+.start-check input{
+  margin-top: 0.18rem;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--teal);
+}
+
+.start-actions{
+  display: flex;
+  gap: 0.65rem;
+  justify-content: flex-end;
+}
+.start-actions .btn{ padding: 0.7rem 0.95rem; font-size: 0.95rem; }
+.start-actions .btn-primary{ background: var(--teal); color: #fff; flex: 1; }
+.start-actions .btn-primary:disabled{ opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+.start-actions .btn-ghost{ background: #F3F4F6; color: #333; }
+.start-actions .btn-ghost:hover{ background: #E5E7EB; box-shadow: none; transform: none; }
+
+.start-support{
+  margin-top: 0.9rem;
+  display: none;
+  background: #FFF7ED;
+  border: 1px solid #FED7AA;
+  border-radius: 16px;
+  padding: 0.85rem 1rem;
+}
+.start-support.visible{ display:block; }
+.start-support p{ font-size: 0.9rem; color:#7c2d12; line-height: 1.55; margin-bottom: 0.55rem; }
+.start-support a{
+  display: inline-block;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #9a3412;
+  text-decoration: none;
+}
+.start-support a:hover{ text-decoration: underline; }
+
+@media (max-width: 560px){
+  .start-box{ padding: 1.35rem 1.25rem 1.1rem; }
+  .start-actions{ flex-direction: column; }
+  .start-actions .btn{ width: 100%; }
+}
+
+
+/* Multi-page preview tweaks */
+.sheets-wrapper { flex-wrap: wrap; }
+.sheet-block { flex: 0 0 auto; }
+
 </style>
 </head>
 <body>
@@ -744,6 +867,41 @@ input[type="color"] {
 <div class="toast" id="toast"></div>
 
 <!-- WARNING MODAL -->
+
+<!-- STARTUP / TERMS MODAL -->
+<div class="start-overlay" id="start-overlay" aria-hidden="true">
+  <div class="start-box" role="dialog" aria-modal="true" aria-labelledby="start-title">
+    <div class="start-badge">🎁</div>
+    <h2 id="start-title" tabindex="-1" data-i18n="start_title"></h2>
+    <p class="start-lead" data-i18n="start_free"></p>
+
+    <div class="start-terms">
+      <h3 data-i18n="start_terms_title"></h3>
+      <ul>
+        <li data-i18n="start_terms_1"></li>
+        <li data-i18n="start_terms_2"></li>
+        <li data-i18n="start_terms_3"></li>
+      </ul>
+      <div class="muted" data-i18n="start_terms_note"></div>
+    </div>
+
+    <label class="start-check">
+      <input type="checkbox" id="start-accept">
+      <span data-i18n="start_accept_label"></span>
+    </label>
+
+    <div class="start-actions">
+      <button class="btn btn-ghost" id="start-support-btn" type="button" data-i18n="start_support_btn"></button>
+      <button class="btn btn-primary" id="start-continue-btn" type="button" disabled data-i18n="start_continue_btn"></button>
+    </div>
+
+    <div class="start-support" id="start-support">
+      <p data-i18n="start_support_note"></p>
+      <a id="start-support-link" href="#" target="_blank" rel="noopener" data-i18n="start_support_link"></a>
+    </div>
+  </div>
+</div>
+
 <div class="warn-overlay" id="warn-overlay">
   <div class="warn-box">
     <div class="warn-icon">⚠️</div>
@@ -776,7 +934,21 @@ input[type="color"] {
 const LANGS = {
   cs: {
     header_sub:       'max. 64 párů · 128 karet · tisk A4',
-    sec1_title:       'Obrázky',
+    
+    // Startup modal
+    start_title: 'Než začneš…',
+    start_free: 'Tato aplikace je plně zdarma. Používáním potvrzuješ podmínky použití níže.',
+    start_terms_title: 'Podmínky použití',
+    start_terms_1: 'Aplikace je poskytována „tak jak je“ (bez záruk). Používáš ji na vlastní odpovědnost.',
+    start_terms_2: 'Nahrané obrázky se zpracovávají lokálně ve tvém prohlížeči (neodesílají se na server).',
+    start_terms_3: 'Podpora je dobrovolná – můžeš zaslat libovolnou částku jako poděkování.',
+    start_terms_note: 'Tip: odkaz/údaje pro podporu si nastavíš v kódu v proměnné SUPPORT_URL.',
+    start_accept_label: 'Souhlasím s podmínkami použití.',
+    start_support_btn: 'Chci podpořit',
+    start_continue_btn: 'Souhlasím a pokračovat',
+    start_support_note: 'Díky! Podporu můžeš poslat přes odkaz níže (doplň si svůj PayPal/Ko‑fi/bankovní údaje).',
+    start_support_link: 'Otevřít odkaz pro podporu',
+sec1_title:       'Obrázky',
     dropzone_text:    'Přetáhněte nebo <strong>klikněte</strong><br>max. 64 obrázků = 128 karet',
     counter_imgs:     'obr.',
     counter_cards:    'karet',
@@ -824,6 +996,7 @@ const LANGS = {
     pdf_done:         'Hotovo! ✓',
     sheet_front:      'PŘEDNÍ STRANA',
     sheet_back:       'RUBOVÁ STRANA',
+    page_of: 'Strana {p}/{t}',
     sheet_list1:      'List 1',
     sheet_list2:      'List 2',
     sheet_info_front: '{n} karet · {r} × {c}',
@@ -847,7 +1020,21 @@ const LANGS = {
   },
   en: {
     header_sub:       'max. 64 pairs · 128 cards · A4 print',
-    sec1_title:       'Images',
+    
+    // Startup modal
+    start_title: 'Before you start…',
+    start_free: 'This app is completely free. By continuing, you confirm the terms of use below.',
+    start_terms_title: 'Terms of use',
+    start_terms_1: 'The app is provided “as is” (no warranties). You use it at your own risk.',
+    start_terms_2: 'Uploaded images are processed locally in your browser (not uploaded to a server).',
+    start_terms_3: 'Support is optional — you can send any amount as a thank‑you.',
+    start_terms_note: 'Tip: set your support link/details in the code via the SUPPORT_URL variable.',
+    start_accept_label: 'I agree to the terms of use.',
+    start_support_btn: 'Support',
+    start_continue_btn: 'Agree & continue',
+    start_support_note: 'Thank you! You can support via the link below (set your PayPal/Ko‑fi/bank details).',
+    start_support_link: 'Open support link',
+sec1_title:       'Images',
     dropzone_text:    'Drag & drop or <strong>click to browse</strong><br>max. 64 images = 128 cards',
     counter_imgs:     'imgs.',
     counter_cards:    'cards',
@@ -895,6 +1082,7 @@ const LANGS = {
     pdf_done:         'Done! ✓',
     sheet_front:      'FRONT SIDE',
     sheet_back:       'BACK SIDE',
+    page_of: 'Page {p}/{t}',
     sheet_list1:      'Sheet 1',
     sheet_list2:      'Sheet 2',
     sheet_info_front: '{n} cards · {r} × {c}',
@@ -918,7 +1106,21 @@ const LANGS = {
   },
   sk: {
     header_sub:       'max. 64 párov · 128 kariet · tlač A4',
-    sec1_title:       'Obrázky',
+    
+    // Startup modal
+    start_title: 'Skôr než začneš…',
+    start_free: 'Táto aplikácia je úplne zadarmo. Pokračovaním potvrdzuješ podmienky používania nižšie.',
+    start_terms_title: 'Podmienky používania',
+    start_terms_1: 'Aplikácia je poskytovaná „tak ako je“ (bez záruk). Používaš ju na vlastné riziko.',
+    start_terms_2: 'Nahrané obrázky sa spracúvajú lokálne v tvojom prehliadači (neodosielajú sa na server).',
+    start_terms_3: 'Podpora je dobrovoľná – môžeš poslať ľubovoľnú sumu ako poďakovanie.',
+    start_terms_note: 'Tip: odkaz/údaje pre podporu nastavíš v kóde v premennej SUPPORT_URL.',
+    start_accept_label: 'Súhlasím s podmienkami používania.',
+    start_support_btn: 'Chcem podporiť',
+    start_continue_btn: 'Súhlasím a pokračovať',
+    start_support_note: 'Vďaka! Podporu môžeš poslať cez odkaz nižšie (doplň si PayPal/Ko‑fi/bankové údaje).',
+    start_support_link: 'Otvoriť odkaz na podporu',
+sec1_title:       'Obrázky',
     dropzone_text:    'Potiahnite alebo <strong>kliknite</strong><br>max. 64 obrázkov = 128 kariet',
     counter_imgs:     'obr.',
     counter_cards:    'kariet',
@@ -966,6 +1168,7 @@ const LANGS = {
     pdf_done:         'Hotovo! ✓',
     sheet_front:      'PREDNÁ STRANA',
     sheet_back:       'RUBOVÁ STRANA',
+    page_of: 'Strana {p}/{t}',
     sheet_list1:      'List 1',
     sheet_list2:      'List 2',
     sheet_info_front: '{n} kariet · {r} × {c}',
@@ -989,7 +1192,21 @@ const LANGS = {
   },
   pl: {
     header_sub:       'maks. 64 pary · 128 kart · druk A4',
-    sec1_title:       'Obrazki',
+    
+    // Startup modal
+    start_title: 'Zanim zaczniesz…',
+    start_free: 'Ta aplikacja jest w pełni darmowa. Kontynuując, potwierdzasz poniższe warunki.',
+    start_terms_title: 'Warunki korzystania',
+    start_terms_1: 'Aplikacja jest dostarczana „tak jak jest” (bez gwarancji). Używasz jej na własne ryzyko.',
+    start_terms_2: 'Wgrane obrazy są przetwarzane lokalnie w przeglądarce (nie są wysyłane na serwer).',
+    start_terms_3: 'Wsparcie jest dobrowolne — możesz wysłać dowolną kwotę jako podziękowanie.',
+    start_terms_note: 'Wskazówka: ustaw link/dane wsparcia w kodzie w zmiennej SUPPORT_URL.',
+    start_accept_label: 'Akceptuję warunki korzystania.',
+    start_support_btn: 'Chcę wesprzeć',
+    start_continue_btn: 'Akceptuję i kontynuuję',
+    start_support_note: 'Dziękuję! Możesz wesprzeć przez link poniżej (ustaw PayPal/Ko‑fi/dane bankowe).',
+    start_support_link: 'Otwórz link wsparcia',
+sec1_title:       'Obrazki',
     dropzone_text:    'Przeciągnij lub <strong>kliknij</strong><br>maks. 64 obrazki = 128 kart',
     counter_imgs:     'obr.',
     counter_cards:    'kart',
@@ -1037,6 +1254,7 @@ const LANGS = {
     pdf_done:         'Gotowe! ✓',
     sheet_front:      'AWERS',
     sheet_back:       'REWERS',
+    page_of: 'Strona {p}/{t}',
     sheet_list1:      'Arkusz 1',
     sheet_list2:      'Arkusz 2',
     sheet_info_front: '{n} kart · {r} × {c}',
@@ -1060,7 +1278,21 @@ const LANGS = {
   },
   de: {
     header_sub:       'max. 64 Paare · 128 Karten · A4-Druck',
-    sec1_title:       'Bilder',
+    
+    // Startup modal
+    start_title: 'Bevor du startest…',
+    start_free: 'Diese App ist komplett kostenlos. Wenn du fortfährst, bestätigst du die Nutzungsbedingungen unten.',
+    start_terms_title: 'Nutzungsbedingungen',
+    start_terms_1: 'Die App wird „wie sie ist“ bereitgestellt (ohne Gewähr). Nutzung auf eigenes Risiko.',
+    start_terms_2: 'Hochgeladene Bilder werden lokal im Browser verarbeitet (nicht auf einen Server hochgeladen).',
+    start_terms_3: 'Unterstützung ist freiwillig — du kannst einen beliebigen Betrag als Dank senden.',
+    start_terms_note: 'Tipp: Support‑Link/Details im Code über die Variable SUPPORT_URL setzen.',
+    start_accept_label: 'Ich stimme den Nutzungsbedingungen zu.',
+    start_support_btn: 'Unterstützen',
+    start_continue_btn: 'Zustimmen & weiter',
+    start_support_note: 'Danke! Unterstützung über den Link unten (PayPal/Ko‑fi/Bankdaten eintragen).',
+    start_support_link: 'Support‑Link öffnen',
+sec1_title:       'Bilder',
     dropzone_text:    'Ziehen oder <strong>klicken</strong><br>max. 64 Bilder = 128 Karten',
     counter_imgs:     'Bilder',
     counter_cards:    'Karten',
@@ -1108,6 +1340,7 @@ const LANGS = {
     pdf_done:         'Fertig! ✓',
     sheet_front:      'VORDERSEITE',
     sheet_back:       'RÜCKSEITE',
+    page_of: 'Seite {p}/{t}',
     sheet_list1:      'Blatt 1',
     sheet_list2:      'Blatt 2',
     sheet_info_front: '{n} Karten · {r} × {c}',
@@ -1267,6 +1500,7 @@ function setBorderStyle(btn) {
   document.getElementById('border-thickness-field').style.display = show ? '' : 'none';
   document.getElementById('border-color-field').style.display = show ? '' : 'none';
   updatePreview();
+initStartModal();
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1458,35 +1692,159 @@ function generate() {
 function confirmGenerate() { closeWarn(); doGenerate(); }
 function closeWarn() { document.getElementById('warn-overlay').classList.remove('visible'); }
 
+
+// ══════════════════════════════════════════════════════════════
+// A4 AUTO-FIT + AUTO-PAGINATION (print-safe)
+// ══════════════════════════════════════════════════════════════
+const A4_MM = { w: 210, h: 297 };
+const PRINT_MARGIN_MM = 8;                  // must match @media print @page margin
+const CSS_PX_PER_MM = 96 / 25.4;
+
+// Conservative layout constants (for print):
+const PRINT_LEFT_SCISSORS_W = 16;           // left "✂" column width approximation
+const PRINT_TOP_SCISSORS_H = 22;            // top "✂" row height approximation
+const PRINT_GRID_BORDER = 2;                // top + left dashed border thickness
+const PRINT_CELL_BORDER = 2;                // each cell right/bottom dashed border thickness
+const PRINT_SAFETY_W = 10;                  // extra buffer against printer/browser quirks
+const PRINT_SAFETY_H = 12;                  // extra buffer against printer/browser quirks
+
+function getPrintableA4Px() {
+  return {
+    w: (A4_MM.w - 2 * PRINT_MARGIN_MM) * CSS_PX_PER_MM,
+    h: (A4_MM.h - 2 * PRINT_MARGIN_MM) * CSS_PX_PER_MM,
+  };
+}
+
+function estimateGridWidthPx(p) {
+  const cellOuterW = (p.cardPx + p.gap) + PRINT_CELL_BORDER; // content width + right border
+  return PRINT_LEFT_SCISSORS_W + PRINT_GRID_BORDER + (p.cols * cellOuterW);
+}
+
+function estimateRowsPerA4(p) {
+  const page = getPrintableA4Px();
+  const rowOuterH = (p.cardPx + p.gap) + PRINT_CELL_BORDER;  // content height + bottom border
+  const usable = page.h - PRINT_TOP_SCISSORS_H - PRINT_GRID_BORDER - PRINT_SAFETY_H;
+  return Math.max(1, Math.floor(usable / rowOuterH));
+}
+
+function calcMaxCardPxForA4Width(p) {
+  const page = getPrintableA4Px();
+  const usableForCols = page.w - PRINT_LEFT_SCISSORS_W - PRINT_GRID_BORDER - PRINT_SAFETY_W;
+  const maxCellContent = Math.floor(usableForCols / p.cols) - PRINT_CELL_BORDER; // remove per-cell border
+  return Math.max(20, maxCellContent - p.gap); // remove gap to get cardPx
+}
+
+function roundDownToStep(val, step = 5) {
+  return Math.max(step, Math.floor(val / step) * step);
+}
+
+function autoFitCardSizeForA4(baseP) {
+  const p = { ...baseP };
+  const original = p.cardPx;
+
+  // Width-first fit (most common reason for split/overflow on print)
+  let target = Math.min(p.cardPx, calcMaxCardPxForA4Width(p));
+  target = roundDownToStep(target, 5);
+
+  // Ensure at least one row fits vertically too (usually already true)
+  p.cardPx = Math.max(20, target);
+  while (p.cardPx > 20 && estimateRowsPerA4(p) < 1) {
+    p.cardPx = Math.max(20, p.cardPx - 5);
+  }
+
+  // Final safety: if width still too large due to rounding, decrement by step.
+  while (p.cardPx > 20 && estimateGridWidthPx(p) > (getPrintableA4Px().w - PRINT_SAFETY_W)) {
+    p.cardPx = Math.max(20, p.cardPx - 5);
+  }
+
+  return {
+    p,
+    changed: p.cardPx !== original,
+    originalCardPx: original,
+    fittedCardPx: p.cardPx
+  };
+}
+
+function paginateCards(cards, p) {
+  const rowsPerPage = estimateRowsPerA4(p);
+  const pageSize = Math.max(p.cols, rowsPerPage * p.cols);
+  const pages = [];
+
+  for (let i = 0; i < cards.length; i += pageSize) {
+    const slice = cards.slice(i, i + pageSize);
+    while (slice.length < pageSize) slice.push(null); // pad last page (duplex alignment)
+    pages.push(slice);
+  }
+  return { pages, rowsPerPage, pageSize };
+}
+
+function syncAutoCardSizeUI(px) {
+  const sizeEl = document.getElementById('size-select');
+  const sizeVal = document.getElementById('size-val');
+  if (!sizeEl) return;
+
+  // Respect slider limits in UI (internal logic can still use fitted px if needed)
+  const min = parseInt(sizeEl.min || '0', 10);
+  const max = parseInt(sizeEl.max || '9999', 10);
+  const uiPx = Math.max(min, Math.min(max, px));
+
+  sizeEl.value = String(uiPx);
+  if (sizeVal) sizeVal.textContent = `${uiPx} px`;
+
+  // Keep preview in sync with what the user will print
+  if (typeof updatePreview === 'function') updatePreview();
+}
+
 function doGenerate() {
-  const p = getCardParams();
+  const baseP = getCardParams();
   const doubled = shuffle([...images, ...images]);
+
+  // 1) Auto-fit card size to printable A4 width (prevents splitting/scaling)
+  const fit = autoFitCardSizeForA4(baseP);
+  const p = fit.p;
+
+  // 2) Auto-pagination by rows per A4 page (front/back pairs)
+  const { pages, rowsPerPage } = paginateCards(doubled, p);
+
   document.getElementById('empty-state').style.display = 'none';
   const wrapper = document.getElementById('sheets-wrapper');
   wrapper.style.display = 'flex';
   wrapper.innerHTML = '';
-  wrapper.appendChild(makeFrontSheet(doubled, p));
-  wrapper.appendChild(makeBackSheet(doubled, p));
-  toast(t('toast_generated', {n: images.length}));
+
+  pages.forEach((pageCards, idx) => {
+    const pageNo = idx + 1;
+    const total = pages.length;
+    wrapper.appendChild(makeFrontSheet(pageCards, p, pageNo, total));
+    wrapper.appendChild(makeBackSheet(pageCards, p, pageNo, total));
+  });
+
+  if (fit.changed) {
+    syncAutoCardSizeUI(p.cardPx);
+    toast(`${t('toast_generated', {n: images.length})} • ${pages.length}× A4 • auto size ${fit.originalCardPx}px → ${fit.fittedCardPx}px`);
+  } else {
+    toast(`${t('toast_generated', {n: images.length})} • ${pages.length}× A4 • ${rowsPerPage} rows/A4`);
+  }
 }
 
 // ══════════════════════════════════════════════════════════════
 // FRONT SHEET
 // ══════════════════════════════════════════════════════════════
-function makeFrontSheet(cards, p) {
+function makeFrontSheet(cards, p, pageNo = 1, totalPages = 1) {
   const block = document.createElement('div');
   block.className = 'sheet-block';
   const rows = Math.ceil(cards.length / p.cols);
   block.innerHTML = `
     <div class="sheet-header">
       <span class="sheet-badge">${t('sheet_front')}</span>
-      <span class="sheet-info">${t('sheet_info_front',{n:cards.length,r:rows,c:p.cols})}</span>
+      <span class="sheet-info">${t('sheet_info_front',{n:cards.filter(Boolean).length,r:rows,c:p.cols})}</span>
+      <span class=\"sheet-info\" style=\"margin-left:auto;opacity:.75;\">${t('page_of',{p:pageNo,t:totalPages})}</span>
       <span class="sheet-tip">${t('sheet_list1')}</span>
     </div>`;
   const body = document.createElement('div');
   body.className = 'sheet-body';
   body.style.padding = p.sheetPad + 'px';
   body.appendChild(buildGrid(cards, p, (card) => (container) => {
+    if (!card || !card.src) return;
     const img = document.createElement('img');
     img.src = card.src; img.draggable = false;
     img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit;';
@@ -1503,7 +1861,7 @@ function makeFrontSheet(cards, p) {
 // ══════════════════════════════════════════════════════════════
 // BACK SHEET
 // ══════════════════════════════════════════════════════════════
-function makeBackSheet(cards, p) {
+function makeBackSheet(cards, p, pageNo = 1, totalPages = 1) {
   const block = document.createElement('div');
   block.className = 'sheet-block';
   const rows = Math.ceil(cards.length / p.cols);
@@ -1515,7 +1873,8 @@ function makeBackSheet(cards, p) {
   block.innerHTML = `
     <div class="sheet-header">
       <span class="sheet-badge back">${t('sheet_back')}</span>
-      <span class="sheet-info">${t('sheet_info_back',{n:cards.length})}</span>
+      <span class="sheet-info">${t('sheet_info_back',{n:cards.filter(Boolean).length})}</span>
+      <span class=\"sheet-info\" style=\"margin-left:auto;opacity:.75;\">${t('page_of',{p:pageNo,t:totalPages})}</span>
       <span class="sheet-tip back">${t('sheet_list2')}</span>
     </div>`;
   const body = document.createElement('div');
@@ -1550,6 +1909,7 @@ function buildGrid(cards, p, contentFnFactory) {
   const rows = Math.ceil(cards.length / p.cols);
 
   const wrapper = document.createElement('div');
+  wrapper.className = 'grid-wrapper';
   wrapper.style.overflowX = 'auto';
 
   const outer = document.createElement('div');
@@ -1569,11 +1929,12 @@ function buildGrid(cards, p, contentFnFactory) {
 
   // ── right column: top scissors + rows ────────────────────
   const colWrap = document.createElement('div');
+  colWrap.className = 'cut-cols';
 
   // top scissors
   const topSc = document.createElement('div');
   topSc.className = 'col-scissors';
-  const colCount = Math.min(p.cols, cards.length);
+  const colCount = p.cols; // keep a stable column count (helps A4 pagination + duplex alignment)
   for (let c = 0; c < colCount; c++) {
     const s = document.createElement('div');
     s.className = 'col-scissors-cell';
@@ -1596,6 +1957,10 @@ function buildGrid(cards, p, contentFnFactory) {
       rowEl.appendChild(makeCardCell(contentFnFactory(card), p));
     });
 
+    // pad row with empty cells so each printed page keeps a perfect rectangle
+    for (let k = rowCards.length; k < p.cols; k++) {
+      rowEl.appendChild(makeCardCell(() => {}, p));
+    }
     gridWrap.appendChild(rowEl);
   }
 
